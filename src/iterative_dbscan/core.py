@@ -70,9 +70,9 @@ class IterativeDBSCAN(ClusterMixin, BaseEstimator):
         useful when a mega-cluster is internally heterogeneous but well
         isolated from other clusters (in which case silhouette stays high
         and the original criterion wouldn't trigger a split).
-    demote_unsplittable : bool, default False
+    noisify_unsplittable : bool, default False
         If a cluster has low silhouette but cannot be split (DBSCAN returns
-        only one cluster on its sub-matrix), what to do? If ``True``, demote
+        only one cluster on its sub-matrix), what to do? If ``True``, transforms
         its points to noise (the original LENTA behaviour). If ``False``,
         leave the cluster intact.
 
@@ -99,7 +99,7 @@ class IterativeDBSCAN(ClusterMixin, BaseEstimator):
         max_depth: int = 10,
         eps: float | None = None,
         max_cluster_size: int | None = None,
-        demote_unsplittable: bool = False,
+        noisify_unsplittable: bool = False,
     ) -> None:
         self.metric = metric
         self.min_samples = min_samples
@@ -108,7 +108,7 @@ class IterativeDBSCAN(ClusterMixin, BaseEstimator):
         self.max_depth = max_depth
         self.eps = eps
         self.max_cluster_size = max_cluster_size
-        self.demote_unsplittable = demote_unsplittable
+        self.noisify_unsplittable = noisify_unsplittable
 
     # ------------------------------------------------------------------ public
 
@@ -245,7 +245,7 @@ class IterativeDBSCAN(ClusterMixin, BaseEstimator):
         unique_sub_clusters = [lbl for lbl in np.unique(sub_labels) if lbl != NOISE_LABEL]
         if len(unique_sub_clusters) <= 1:
             # cannot meaningfully split
-            if self.demote_unsplittable:
+            if self.noisify_unsplittable:
                 labels[mask] = NOISE_LABEL
                 # remove from tree's effective state (keep node for traceability but mark)
                 tree.nodes[target_label].silhouette = None  # ineligible to revisit
